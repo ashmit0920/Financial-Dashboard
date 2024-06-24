@@ -4,6 +4,8 @@
 
 This project is a Financial Data Visualization Dashboard built using Dash, Plotly and Python. It allows users to visualize stock prices, moving averages, and trading volumes over a specified date range for multiple ticker symbols.
 
+![User Interface](./User%20Interface.png)
+
 ## Features
 
 - **Dynamic Visualization:** Display stock prices and moving averages (20-day, 50-day, 100-day) dynamically on a plot.
