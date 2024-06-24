@@ -14,6 +14,7 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H1("Financial Data Visualization Dashboard", className='text-center'), className="mb-4 mt-4")
     ]),
+
     dbc.Row([
         dbc.Col([
             dbc.Label("Enter Ticker Symbols (comma separated)"),
@@ -42,15 +43,32 @@ app.layout = dbc.Container([
             )
         ], width=4, className="mb-3")
     ]),
+
+    dbc.Row([
+        dbc.Col([
+            dbc.Label("Select Additional Features"),
+            dcc.Checklist(
+                id='additional-features',
+                options=[
+                    {'label': 'Show Trading Volume', 'value': 'volume'}
+                ],
+                value=['volume'],
+                inline=True,
+                className='mt-2'
+            )
+        ], width=12, className="mb-4")
+    ]),
+
     dbc.Row([
         dbc.Col([
             dbc.Button("Show", id='show-button', color='primary', className='mt-2')
         ], width=12, className="d-flex justify-content-center mb-4")
     ]),
+
     dbc.Row([
         dbc.Col([
             dcc.Graph(id='price-chart')
-        ])
+        ], className='mb-4')
     ])
 ])
 
@@ -61,10 +79,11 @@ app.layout = dbc.Container([
     [State('tickers', 'value'),
      State('date-range', 'start_date'),
      State('date-range', 'end_date'),
-     State('moving-averages', 'value')]
+     State('moving-averages', 'value'),
+     State('additional-features', 'value')]
 )
 
-def update_graph(n_clicks, tickers, start_date, end_date, moving_averages):
+def update_graph(n_clicks, tickers, start_date, end_date, moving_averages, additional_features):
     if not n_clicks or not tickers:
         return go.Figure()
 
@@ -78,37 +97,40 @@ def update_graph(n_clicks, tickers, start_date, end_date, moving_averages):
 
     fig = go.Figure()
 
-    if len(tickers) == 1:
+    for ticker in tickers:
         try:
-            df = data['Adj Close'].dropna()
-        except KeyError:
-            raise "Invalid ticker name. Please recheck the company tickers."
-        
-        fig.add_trace(go.Scatter(x=df.index, y=df, mode='lines', name=f"{tickers[0]} Price"))
+            if len(tickers) == 1:
+                df_price = data['Adj Close'].dropna()
+                df_volume = data['Volume'].dropna()
+            else:
+                df_price = data['Adj Close'][ticker].dropna()
+                df_volume = data['Volume'][ticker].dropna()
+
+        except Exception as e:
+            raise e
+                
+        fig.add_trace(go.Scatter(x=df_price.index, y=df_price, mode='lines', name=f"{ticker} Price"))
 
         for ma in moving_averages:
-            ma_series = df.rolling(window=ma).mean()
-            fig.add_trace(go.Scatter(x=ma_series.index, y=ma_series, mode='lines', name=f"{tickers[0]} {ma}-day MA"))
-    
-    else:
-        for ticker in tickers:
-            try:
-                df = data['Adj Close'][ticker].dropna()
-            except KeyError:
-                raise "Invalid ticker name. Please recheck the company tickers."
-                
-            fig.add_trace(go.Scatter(x=df.index, y=df, mode='lines', name=f"{ticker} Price"))
+            ma_series = df_price.rolling(window=ma).mean()
+            fig.add_trace(go.Scatter(x=ma_series.index, y=ma_series, mode='lines', name=f"{ticker} {ma}-day MA"))
+        
+        if 'volume' in additional_features:
+            fig.add_trace(go.Bar(x=df_volume.index, y=df_volume, name=f"{ticker} Volume", yaxis='y2', opacity=0.3))
 
-            for ma in moving_averages:
-                ma_series = df.rolling(window=ma).mean()
-                fig.add_trace(go.Scatter(x=ma_series.index, y=ma_series, mode='lines', name=f"{ticker} {ma}-day MA"))
 
     fig.update_layout(
         title="Stock Prices and Moving Averages",
         xaxis_title="Date",
         yaxis_title="Price",
         legend_title="Legend",
-        template="plotly_dark"
+        template="plotly_dark",
+        yaxis2=dict(
+            title='Volume',
+            overlaying='y',
+            side='right',
+            showgrid=False
+        )
     )
 
     return fig
