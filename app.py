@@ -65,7 +65,7 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             dcc.Graph(id='price-chart')
-        ])
+        ], className='mb-4')
     ])
 ])
 
