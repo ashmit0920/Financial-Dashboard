@@ -3,8 +3,8 @@ from dash import html, dcc
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
-import yfinance as yf
 import plotly.graph_objs as go
+from redis_cache import get_stock_data  # Import the caching function
 
 # Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], title="Financial Data Visualization")
@@ -14,7 +14,6 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H1("Financial Data Visualization Dashboard", className='text-center'), className="mb-4 mt-4")
     ]),
-
     dbc.Row([
         dbc.Col([
             dbc.Label("Enter Ticker Symbols (comma separated)"),
@@ -39,11 +38,11 @@ app.layout = dbc.Container([
                     {'label': '100-day', 'value': 100}
                 ],
                 value=[20, 50],
-                inline=True
+                inline=True,
+                className='mt-2'
             )
         ], width=4, className="mb-3")
     ]),
-
     dbc.Row([
         dbc.Col([
             dbc.Label("Select Additional Features"),
@@ -58,17 +57,15 @@ app.layout = dbc.Container([
             )
         ], width=12, className="mb-4")
     ]),
-
     dbc.Row([
         dbc.Col([
             dbc.Button("Show", id='show-button', color='primary', className='mt-2')
         ], width=12, className="d-flex justify-content-center mb-4")
     ]),
-
     dbc.Row([
         dbc.Col([
             dcc.Graph(id='price-chart')
-        ], className='mb-4')
+        ])
     ])
 ])
 
@@ -93,31 +90,27 @@ def update_graph(n_clicks, tickers, start_date, end_date, moving_averages, addit
     start_date = pd.to_datetime(start_date).strftime('%Y-%m-%d')
     end_date = pd.to_datetime(end_date).strftime('%Y-%m-%d')
 
-    data = yf.download(tickers, start=start_date, end=end_date)
+    # Get or set cached data
+    data = get_stock_data(tickers, start_date, end_date)
 
     fig = go.Figure()
 
     for ticker in tickers:
-        try:
-            if len(tickers) == 1:
-                df_price = data['Adj Close'].dropna()
-                df_volume = data['Volume'].dropna()
-            else:
-                df_price = data['Adj Close'][ticker].dropna()
-                df_volume = data['Volume'][ticker].dropna()
+        if len(tickers) == 1:
+            df_price = data['Adj Close'].dropna()
+            df_volume = data['Volume'].dropna()
+        else:
+            df_price = data['Adj Close'][ticker].dropna()
+            df_volume = data['Volume'][ticker].dropna()
 
-        except Exception as e:
-            raise e
-                
         fig.add_trace(go.Scatter(x=df_price.index, y=df_price, mode='lines', name=f"{ticker} Price"))
 
         for ma in moving_averages:
             ma_series = df_price.rolling(window=ma).mean()
             fig.add_trace(go.Scatter(x=ma_series.index, y=ma_series, mode='lines', name=f"{ticker} {ma}-day MA"))
-        
+
         if 'volume' in additional_features:
             fig.add_trace(go.Bar(x=df_volume.index, y=df_volume, name=f"{ticker} Volume", yaxis='y2', opacity=0.3))
-
 
     fig.update_layout(
         title="Stock Prices and Moving Averages",

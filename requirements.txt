@@ -3,3 +3,8 @@ dash-bootstrap-components
 pandas
 yfinance
 plotly
+redis
+os
+python-dotenv
+zlib
+pickle
