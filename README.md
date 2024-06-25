@@ -14,6 +14,12 @@ This project is a Financial Data Visualization Dashboard built using Dash, Plotl
 - **Responsive Design:** Designed using Dash framework for responsive UI across different devices.
 - **Dark Mode:** Uses Plotly's dark theme for enhanced visualization experience.
 
+## Redis Caching
+
+- **Purpose:** Redis is used to cache stock market data retrieved from Yahoo Finance to optimize performance.
+- **Implementation:** The redis_cache.py module initializes a Redis client, handles data caching, and ensures cached data integrity.
+- **Benefits:** Reduces data retrieval time by serving cached data for repeated queries within a specified cache period (24 hours in this project).
+
 ## Setup
 
 Installation:
@@ -33,11 +39,24 @@ python app.py
 
 Access Dashboard: Open a web browser and navigate to http://127.0.0.1:8050/ to view the dashboard.
 
-## Redis Caching
+## Run using Docker
 
-- **Purpose:** Redis is used to cache stock market data retrieved from Yahoo Finance to optimize performance.
-- **Implementation:** The redis_cache.py module initializes a Redis client, handles data caching, and ensures cached data integrity.
-- **Benefits:** Reduces data retrieval time by serving cached data for repeated queries within a specified cache period (24 hours in this project).
+Build the Docker image:
+```
+docker build -t financial-dashboard .
+```
+
+Run Redis container:
+```
+docker run -d --name redis -p 6379:6379 redis
+```
+
+Run the application container:
+```
+docker run -d -p 8050:8050 --name financial-dashboard --link redis:redis financial-dashboard
+```
+
+Access the application: Open a web browser and navigate to http://localhost:8050/
 
 ## Future Updates
 
