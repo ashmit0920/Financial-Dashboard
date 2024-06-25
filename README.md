@@ -14,7 +14,7 @@ This project is a Financial Data Visualization Dashboard built using Dash, Plotl
 - **Responsive Design:** Designed using Dash framework for responsive UI across different devices.
 - **Dark Mode:** Uses Plotly's dark theme for enhanced visualization experience.
 
-## Redis Caching
+## Redis for Caching
 
 - **Purpose:** Redis is used to cache stock market data retrieved from Yahoo Finance to optimize performance.
 - **Implementation:** The redis_cache.py module initializes a Redis client, handles data caching, and ensures cached data integrity.
